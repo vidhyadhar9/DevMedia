@@ -59,17 +59,17 @@ app.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email });//this is the instanceof the user
         if (!user) {
             return res.status(404).send({ message: "Invalid credentials" });
         }
+        const isPasswordvalid  = await user.passWordValidation(password); 
+        console.log(isPasswordvalid);
 
-        // Here you would normally check the password
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
+        if (!isPasswordvalid) {
             return res.status(401).send({ message: "Invalid credentials" });
         }
-        const token = jwt.sign({ id: user._id  }, 'SecretKey', { expiresIn: '1h' });
+        const token = await user.getJWT();
         res.cookie('token', token);
         return res.status(200).send({ message: "Login successful" });
     } catch (err) {
