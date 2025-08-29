@@ -1,6 +1,8 @@
 const express = require('express');
 const connectDB = require('./config/database');
 const User = require('./models/user');
+const authValidation = require('./utillities/auth');
+const bcrypt = require('bcrypt');
 
 const app = express();
 app.use(express.json());
@@ -26,8 +28,12 @@ app.post('/signup',async (req,res)=>{
 const user = new User({ ...req.body });
 
 try {
-  const result = await user.save();
-  return res.status(201).send({ message: "User created successfully", data: result });
+    authValidation(req);
+    const password = req.body.password;
+    const hashedPassword = await bcrypt.hash(password, 10);
+    user.password = hashedPassword;
+    const result = await user.save();
+    return res.status(201).send({ message: "User created successfully", data: result });
 } catch (err) {
   // Handle duplicate email
   if (err.code === 11000) {
@@ -52,11 +58,12 @@ app.post('/login', async (req, res) => {
     try {
         const user = await User.findOne({ email });
         if (!user) {
-            return res.status(404).send({ message: "User not found" });
+            return res.status(404).send({ message: "Invalid credentials" });
         }
 
         // Here you would normally check the password
-        if (user.password !== password) {
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
             return res.status(401).send({ message: "Invalid credentials" });
         }
 
