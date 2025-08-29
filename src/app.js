@@ -3,6 +3,7 @@ const connectDB = require('./config/database');
 const User = require('./models/user');
 const authValidation = require('./utillities/auth');
 const bcrypt = require('bcrypt');
+const authMiddleware = require('./middleware/auth');
 const cookieParser = require('cookie-parser');
 const jwt = require('jsonwebtoken');
 
@@ -78,21 +79,9 @@ app.post('/login', async (req, res) => {
 
 
 
-app.get('/profile', async (req, res) => {
-
-    const token = req.cookies.token;
-    if (!token) {
-        return res.status(401).send({ message: "Unauthorized" });
-    }
-
+app.get('/profile',authMiddleware,async (req, res) => {
     try {
-        //token verification 
-        const decoded = jwt.verify(token, 'SecretKey');
-        const user = await User.findById(decoded.id);
-        // const user = await User.findOne({ email: decoded.email });
-        if (!user) {
-            return res.status(404).send({ message: "User not found" });
-        }
+        const user = req.user;
         return res.status(200).send({ message: "Profile fetched successfully", user });
     } catch (err) {
         return res.status(500).send({ message: "Error fetching profile" });
@@ -100,40 +89,6 @@ app.get('/profile', async (req, res) => {
 });
 
 
-app.patch('/update', async (req, res) => {
-    const email = req.body.email;
-
-    try {
-        const user = await User.findOneAndUpdate(
-            { email },
-            { $set: req.body },
-            { new: true }
-        );
-
-        if (!user) {
-            return res.status(404).send({ message: "User not found" });
-        }
-
-        return res.status(200).send({ message: "User updated successfully", user });
-    } catch (err) {
-        return res.status(500).send({ message: "Error updating user" });
-    }
-});
-
-app.delete('/delete', async (req, res) => {
-    const email = req.body.email;
-
-    try {
-        const user = await User.findOneAndDelete({ email });
-        if (!user) {
-            return res.status(404).send({ message: "User not found" });
-        }
-
-        return res.status(200).send({ message: "User deleted successfully" });
-    } catch (err) {
-        return res.status(500).send({ message: "Error deleting user" });
-    }
-});
 
 
 
