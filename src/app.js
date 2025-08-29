@@ -3,10 +3,12 @@ const connectDB = require('./config/database');
 const User = require('./models/user');
 const authValidation = require('./utillities/auth');
 const bcrypt = require('bcrypt');
+const cookieParser = require('cookie-parser');
+const jwt = require('jsonwebtoken');
 
 const app = express();
 app.use(express.json());
-
+app.use(cookieParser());
 
 connectDB().then(() => {
     console.log("MongoDB connected")
@@ -66,10 +68,34 @@ app.post('/login', async (req, res) => {
         if (!isMatch) {
             return res.status(401).send({ message: "Invalid credentials" });
         }
-
+        const token = jwt.sign({ id: user._id  }, 'SecretKey', { expiresIn: '1h' });
+        res.cookie('token', token);
         return res.status(200).send({ message: "Login successful" });
     } catch (err) {
         return res.status(500).send({ message: "Error logging in" });
+    }
+});
+
+
+
+app.get('/profile', async (req, res) => {
+
+    const token = req.cookies.token;
+    if (!token) {
+        return res.status(401).send({ message: "Unauthorized" });
+    }
+
+    try {
+        //token verification 
+        const decoded = jwt.verify(token, 'SecretKey');
+        const user = await User.findById(decoded.id);
+        // const user = await User.findOne({ email: decoded.email });
+        if (!user) {
+            return res.status(404).send({ message: "User not found" });
+        }
+        return res.status(200).send({ message: "Profile fetched successfully", user });
+    } catch (err) {
+        return res.status(500).send({ message: "Error fetching profile" });
     }
 });
 
