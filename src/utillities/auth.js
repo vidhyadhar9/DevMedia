@@ -19,4 +19,9 @@ function authValidation(req) {
 }
 
 
-module.exports = authValidation;
+const VerificationOfUserUpdate = function(updates){
+    const allowedUpdates = ['firstName', 'lastName', 'email' , 'skills' , 'profile'];
+    return Object.keys(updates).every((key) => allowedUpdates.includes(key));
+}
+
+module.exports = { authValidation, VerificationOfUserUpdate };
