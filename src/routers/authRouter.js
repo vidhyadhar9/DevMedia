@@ -1,6 +1,6 @@
 const express = require('express');
 const authRouter = express.Router();
-const authValidation = require('../utillities/auth');
+const {authValidation } = require('../utillities/auth');
 const bcrypt = require('bcrypt');
 const cookieParser = require('cookie-parser');
 
